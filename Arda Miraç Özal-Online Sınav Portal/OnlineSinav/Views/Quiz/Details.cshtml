@@ -1,0 +1,126 @@
+@model QuizDetailsViewModel
+@{
+    ViewData["Title"] = "Sınav Detayı";
+    Layout = "~/Views/Shared/_adminLayout.cshtml";
+}
+
+<div class="container">
+    <div class="card mb-4">
+        <div class="card-header">
+            <h3>@Model.Quiz.Title</h3>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <p><strong>Sınıf:</strong> @Model.Quiz.Classroom?.Name</p>
+                    <p><strong>Başlangıç:</strong> @Model.Quiz.StartDate.ToString("dd/MM/yyyy HH:mm")</p>
+                    <p><strong>Bitiş:</strong> @Model.Quiz.EndDate.ToString("dd/MM/yyyy HH:mm")</p>
+                </div>
+                <div class="col-md-6">
+                    <p>
+                        <strong>Durum:</strong>
+                        @if (Model.Quiz.IsActive)
+                        {
+                            <span class="badge bg-success">Aktif</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-danger">Pasif</span>
+                        }
+                    </p>
+                    <p><strong>Soru Sayısı:</strong> @Model.Questions.Count</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="questions-section">
+        <h4 class="mb-3">Sorular</h4>
+        @foreach (var question in Model.Questions)
+        {
+            <div class="card mb-3">
+                <div class="card-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Soru #@question.Id</h5>
+                        @if (User.IsInRole("Admin"))
+                        {
+                            <button class="btn btn-danger btn-sm" onclick="deleteQuestion(@question.Id)">
+                                <i class="fas fa-trash"></i> Sil
+                            </button>
+                        }
+                    </div>
+                </div>
+                <div class="card-body">
+                    <p class="question-text">@question.Text</p>
+                    <div class="options-list mt-3">
+                        @foreach (var option in question.Options)
+                        {
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="radio" disabled 
+                                       @(option.IsCorrect ? "checked" : "")>
+                                <label class="form-check-label @(option.IsCorrect ? "text-success fw-bold" : "")">
+                                    @option.Text
+                                </label>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+
+    <div class="mt-4">
+        <a asp-action="Index" class="btn btn-secondary">Geri Dön</a>
+        @if (User.IsInRole("Admin"))
+        {
+            <a asp-action="Questions" asp-route-id="@Model.Quiz.Id" class="btn btn-primary">
+                Soru Ekle
+            </a>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function deleteQuestion(questionId) {
+            if (confirm('Bu soruyu silmek istediğinizden emin misiniz?')) {
+                $.ajax({
+                    url: '/Quiz/DeleteQuestion/' + questionId,
+                    type: 'POST',
+                    success: function(response) {
+                        if (response.success) {
+                            toastr.success('Soru başarıyla silindi');
+                            window.location.reload();
+                        } else {
+                            toastr.error('Soru silinirken bir hata oluştu');
+                        }
+                    }
+                });
+            }
+        }
+    </script>
+}
+
+<style>
+    .question-text {
+        font-size: 1.1rem;
+        margin-bottom: 1rem;
+    }
+
+    .options-list {
+        margin-left: 1.5rem;
+    }
+
+    .form-check-label {
+        font-size: 1rem;
+    }
+
+    .card-header h5 {
+        color: #2c3e50;
+    }
+
+    .badge {
+        font-size: 0.9rem;
+        padding: 0.5em 1em;
+    }
+</style> 

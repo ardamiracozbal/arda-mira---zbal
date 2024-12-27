@@ -1,0 +1,102 @@
+﻿@model IEnumerable<Quiz>
+@{
+    ViewData["Title"] = "Ana Sayfa";
+}
+
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <h2 class="mb-4">Sınıf Sınavlarım</h2>
+            
+            @if (!Model.Any())
+            {
+                <div class="alert alert-info">
+                    Henüz sınıfınıza atanmış aktif sınav bulunmamaktadır.
+                </div>
+            }
+            else
+            {
+                <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+                    @foreach (var quiz in Model)
+                    {
+                        <div class="col">
+                            <div class="card h-100">
+                                <div class="card-body">
+                                    <h5 class="card-title">@quiz.Title</h5>
+                                    <p class="card-text">
+                                        <small class="text-muted">
+                                            <i class="fas fa-clock"></i> Başlangıç: @quiz.StartDate.ToString("dd/MM/yyyy HH:mm")
+                                        </small>
+                                    </p>
+                                    <p class="card-text">
+                                        <small class="text-muted">
+                                            <i class="fas fa-clock"></i> Bitiş: @quiz.EndDate.ToString("dd/MM/yyyy HH:mm")
+                                        </small>
+                                    </p>
+                                    <p class="card-text">
+                                        <i class="fas fa-question-circle"></i> Soru Sayısı: @quiz.Questions.Count
+                                    </p>
+
+                                    @{
+                                        var now = DateTime.Now;
+                                        var isQuizTime = now >= quiz.StartDate && now <= quiz.EndDate;
+                                    }
+
+                                    @if (isQuizTime)
+                                    {
+                                        <a href="@Url.Action("TakeQuiz", "Quiz", new { id = quiz.Id })"
+                                           class="btn btn-primary w-100">
+                                            Sınava Başla
+                                        </a>
+                                    }
+                                    else if (now < quiz.StartDate)
+                                    {
+                                        <button class="btn btn-secondary w-100" disabled>
+                                            Sınav Henüz Başlamadı
+                                        </button>
+                                    }
+                                    else
+                                    {
+                                        <button class="btn btn-danger w-100" disabled>
+                                            Sınav Süresi Doldu
+                                        </button>
+                                    }
+                                </div>
+                                <div class="card-footer">
+                                    <small class="text-muted">
+                                        Sınıf: @quiz.Classroom?.Name
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<style>
+    .card {
+        transition: transform 0.2s;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+
+    .card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    }
+
+    .card-title {
+        color: #2c3e50;
+        font-weight: bold;
+    }
+
+    .btn {
+        border-radius: 20px;
+    }
+
+    .fas {
+        margin-right: 5px;
+    }
+</style>

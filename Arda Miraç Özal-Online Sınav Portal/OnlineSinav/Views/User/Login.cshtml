@@ -1,0 +1,56 @@
+﻿
+@{
+    Layout = null;
+}
+
+<!-- Bootstrap CSS -->
+<link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+
+<!-- jQuery -->
+<script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+
+<!-- Bootstrap JS -->
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/notyf/notyf.min.css">
+<script src="https://cdn.jsdelivr.net/npm/notyf/notyf.min.js"></script>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+
+<link rel="stylesheet" href="~/css/firspage.css" />
+@model LoginViewModel
+
+
+<div class="auth-container">
+    <div class="auth-form">
+        <h4>Giriş Yap</h4>
+        <form asp-controller="User" asp-action="Login" method="post">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+            <div class="form-group">
+                <label asp-for="Email">Email</label>
+                <input asp-for="Email" class="form-control" placeholder="Email adresinizi girin" />
+                <span asp-validation-for="Email" class="text-danger"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="Password">Şifre</label>
+                <input asp-for="Password" class="form-control" placeholder="Şifrenizi girin" type="password" />
+                <span asp-validation-for="Password" class="text-danger"></span>
+            </div>
+
+            <div class="form-group">
+                <div class="custom-control custom-checkbox">
+                    <input asp-for="RememberMe" type="checkbox" class="custom-control-input">
+                    <label class="custom-control-label" asp-for="RememberMe">Beni Hatırla</label>
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary w-100">Giriş Yap</button>
+
+            <div class="text-center mt-3">
+                <a href="@Url.Action("Register","User")">Hesabınız yok mu? Kayıt olun</a>
+            </div>
+        </form>
+    </div>
+</div>
+@await Component.InvokeAsync("Notyf")

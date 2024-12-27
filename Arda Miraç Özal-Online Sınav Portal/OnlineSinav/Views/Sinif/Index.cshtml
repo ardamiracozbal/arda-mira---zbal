@@ -1,0 +1,244 @@
+﻿@{
+    ViewData["Title"] = "Index";
+    Layout = "~/Views/Shared/_adminLayout.cshtml";
+}
+
+@model List<Classroom>
+<h1>Sınıflar</h1>
+<button type="button" class="btn btn-success" data-toggle="modal" data-target="#addClassroomModal">Yeni Sınıf Ekle</button> 
+
+<div class="card shadow mb-4">
+    <div class="card-header py-3">
+        <h6 class="m-0 font-weight-bold text-primary">Sınıf Listesi</h6>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-bordered" id="classroomTable" width="100%" cellspacing="0">
+                <thead>
+                    <tr>
+                        <th>Id</th>
+                        <th>İsim</th>
+                        <th>İşlemler</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var classroom in Model)
+                    {
+                        <tr>
+                            <td>@classroom.Id</td>
+                            <td>@classroom.Name</td>
+                            <td>
+                                <button class="btn btn-warning btn-sm edit-btn" data-id="@classroom.Id">Düzenle</button>
+                                <button class="btn btn-danger btn-sm delete-btn" data-id="@classroom.Id">Sil</button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Ekleme Modalı -->
+<div class="modal fade" id="addClassroomModal" tabindex="-1" role="dialog" aria-labelledby="addClassroomModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addClassroomModalLabel">Yeni Sınıf Ekle</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="addClassroomForm">
+                    <div class="form-group">
+                        <label for="classroomName">Sınıf Adı</label>
+                        <input type="text" class="form-control" id="classroomName" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">İptal</button>
+                <button type="button" class="btn btn-primary" id="saveClassroomBtn">Ekle</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Güncelleme Modalı -->
+<div class="modal fade" id="editClassroomModal" tabindex="-1" role="dialog" aria-labelledby="editClassroomModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editClassroomModalLabel">Sınıfı Güncelle</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="editClassroomForm">
+                    <input type="hidden" id="editClassroomId">
+                    <div class="form-group">
+                        <label for="editClassroomName">Sınıf Adı</label>
+                        <input type="text" class="form-control" id="editClassroomName" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">İptal</button>
+                <button type="button" class="btn btn-primary" id="updateClassroomBtn">Güncelle</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.11.5/js/dataTables.bootstrap5.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            // Tabloyu güncelleme fonksiyonu
+            function refreshClassroomTable() {
+                $.ajax({
+                    url: '/Sinif/GetAll',
+                    type: 'GET',
+                    success: function (classrooms) {
+                        var tableBody = $('#classroomTable tbody');
+                        tableBody.empty(); // Mevcut satırları temizle
+                        $.each(classrooms, function (index, classroom) {
+                            tableBody.append(
+                                '<tr>' +
+                                '<td>' + classroom.id + '</td>' +
+                                '<td>' + classroom.name + '</td>' +
+                                '<td>' +
+                                '<button class="btn btn-warning btn-sm edit-btn" data-id="' + classroom.id + '">Düzenle</button>' +
+                                '<button class="btn btn-danger btn-sm delete-btn" data-id="' + classroom.id + '">Sil</button>' +
+                                '</td>' +
+                                '</tr>'
+                            );
+                        });
+                    },
+                    error: function () {
+                        Swal.fire('Hata!', 'Sınıflar alınamadı.', 'error');
+                    }
+                });
+            }
+
+            // Modalı kapatma fonksiyonu
+            function closeModal(modalId) {
+                $(modalId).modal('hide');
+            }
+
+            // Sayfa yüklendiğinde tabloyu güncelle
+            refreshClassroomTable();
+
+            // Ekleme işlemi
+            $('#saveClassroomBtn').on('click', function () {
+                var classroomName = $('#classroomName').val();
+                $.ajax({
+                    url: '/Sinif/Add',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({ Name: classroomName }),
+                    success: function () {
+                        Swal.fire('Eklendi!', 'Sınıf başarıyla eklendi.', 'success');
+                        closeModal('#addClassroomModal'); // Modalı kapat
+                        refreshClassroomTable(); // Tabloyu güncelle
+                    },
+                    error: function () {
+                        Swal.fire('Hata!', 'Sınıf eklenemedi.', 'error');
+                    }
+                });
+            });
+
+            // Silme işlemi
+            $(document).on('click', '.delete-btn', function () {
+                var id = $(this).data('id');
+                Swal.fire({
+                    title: 'Silmek istediğinize emin misiniz?',
+                    text: "Bu işlem geri alınamaz!",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#d33',
+                    cancelButtonColor: '#3085d6',
+                    confirmButtonText: 'Evet, sil!'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        $.ajax({
+                            url: '/Sinif/Delete/' + id,
+                            type: 'POST',
+                            success: function () {
+                                Swal.fire('Silindi!', 'Sınıf başarıyla silindi.', 'success');
+                                refreshClassroomTable(); // Tabloyu güncelle
+                            },
+                            error: function () {
+                                Swal.fire('Hata!', 'Sınıf silinemedi.', 'error');
+                            }
+                        });
+                    }
+                });
+            });
+
+            // Düzenleme işlemi
+            $(document).on('click', '.edit-btn', function () {
+                var id = $(this).data('id');
+                $.ajax({
+                    url: '/Sinif/Get/' + id,
+                    type: 'GET',
+                    success: function (classroom) {
+                        $('#editClassroomId').val(classroom.id);
+                        $('#editClassroomName').val(classroom.name);
+                        $('#editClassroomModal').modal('show');
+                    }
+                });
+            });
+
+            $('#updateClassroomBtn').on('click', function () {
+                var id = $('#editClassroomId').val();
+                var classroomName = $('#editClassroomName').val();
+                $.ajax({
+                    url: '/Sinif/Update/' + id,
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({ Id: id, Name: classroomName }),
+                    success: function () {
+                        Swal.fire('Güncellendi!', 'Sınıf başarıyla güncellendi.', 'success');
+                        closeModal('#editClassroomModal'); // Modalı kapat
+                        refreshClassroomTable(); // Tabloyu güncelle
+                    },
+                    error: function () {
+                        Swal.fire('Hata!', 'Sınıf güncellenemedi.', 'error');
+                    }
+                });
+            });
+
+            // Modal kapatma işlemleri
+            $('.close, .btn-secondary').on('click', function () {
+                closeModal('#addClassroomModal');
+                closeModal('#editClassroomModal');
+            });
+
+            // Kullanıcı ekleme modalı açıldığında sınıfları yükle
+            $('#addUserModal').on('show.bs.modal', function () {
+                $.ajax({
+                    url: '/User/GetClassrooms',
+                    type: 'GET',
+                    success: function (classrooms) {
+                        var classroomSelect = $('#addUserClassroomId');
+                        classroomSelect.empty(); // Mevcut seçenekleri temizle
+                        $.each(classrooms, function (index, classroom) {
+                            classroomSelect.append(
+                                '<option value="' + classroom.id + '">' + classroom.name + '</option>'
+                            );
+                        });
+                    },
+                    error: function () {
+                        Swal.fire('Hata!', 'Sınıflar alınamadı.', 'error');
+                    }
+                });
+            });
+        });
+    </script>
+}
+
+

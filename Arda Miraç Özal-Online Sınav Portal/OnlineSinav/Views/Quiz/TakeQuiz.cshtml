@@ -1,0 +1,130 @@
+
+@model TakeQuizViewModel
+@{
+    ViewData["Title"] = Model.QuizTitle;
+}
+
+<div class="container mt-4">
+    <div class="card">
+        <div class="card-header">
+            <h3>@Model.QuizTitle</h3>
+            <p class="text-muted mb-0">Toplam Soru: @Model.TotalQuestions</p>
+        </div>
+        <div class="card-body">
+            <form id="quizForm">
+                <input type="hidden" id="studentQuizId" value="@Model.StudentQuizId" />
+                
+                @foreach (var question in Model.Questions)
+                {
+                    <div class="question-container mb-4 p-3 border rounded">
+                        <h5 class="question-text mb-3">@question.Text</h5>
+                        
+                        <div class="options-list">
+                            @foreach (var option in question.Options)
+                            {
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="radio" 
+                                           name="question_@question.Id" 
+                                           value="@option.Id" 
+                                           required>
+                                    <label class="form-check-label">
+                                        @option.Text
+                                    </label>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+
+                <div class="d-grid gap-2">
+                    <button type="button" class="btn btn-primary" onclick="submitQuiz()">
+                        Sınavı Tamamla
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function submitQuiz() {
+            const answers = [];
+            const studentQuizId = $('#studentQuizId').val();
+            let allQuestionsAnswered = true;
+
+            // Her soru için seçilen cevabı kontrol et
+            $('.question-container').each(function() {
+                const questionId = $(this).find('input[type="radio"]').attr('name').split('_')[1];
+                const selectedOption = $(`input[name="question_${questionId}"]:checked`).val();
+
+                if (!selectedOption) {
+                    allQuestionsAnswered = false;
+                    $(this).addClass('border-danger');
+                } else {
+                    $(this).removeClass('border-danger');
+                    answers.push({
+                        questionId: parseInt(questionId),
+                        selectedOptionId: parseInt(selectedOption)
+                    });
+                }
+            });
+
+            if (!allQuestionsAnswered) {
+                toastr.warning('Lütfen tüm soruları cevaplayınız');
+                return;
+            }
+
+            // Tüm cevapları gönder
+            $.ajax({
+                url: '/Quiz/SubmitQuiz',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({
+                    studentQuizId: studentQuizId,
+                    answers: answers
+                }),
+                success: function(response) {
+                    if (response.success) {
+                        toastr.success('Sınav başarıyla tamamlandı');
+                        window.location.href = `/Quiz/QuizResult?quizId=${response.quizId}`;
+                    } else {
+                        toastr.error('Sınav kaydedilirken bir hata oluştu');
+                    }
+                },
+                error: function() {
+                    toastr.error('Bir hata oluştu');
+                }
+            });
+        }
+    </script>
+
+    <style>
+        .question-container {
+            background-color: #f8f9fa;
+            transition: all 0.3s ease;
+        }
+
+        .question-container:hover {
+            background-color: #fff;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .question-text {
+            color: #2c3e50;
+        }
+
+        .form-check-label {
+            cursor: pointer;
+        }
+
+        .form-check-input {
+            cursor: pointer;
+        }
+
+        .border-danger {
+            border-color: #dc3545 !important;
+            background-color: #fff8f8;
+        }
+    </style>
+} 

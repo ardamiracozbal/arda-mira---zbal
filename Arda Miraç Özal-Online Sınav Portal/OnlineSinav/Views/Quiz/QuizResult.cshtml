@@ -1,0 +1,129 @@
+
+@model QuizResultViewModel
+@{
+    ViewData["Title"] = "Sınav Sonucu";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container mt-4">
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+            <h3 class="mb-0">@Model.QuizTitle - Sınav Sonucu</h3>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="score-container text-center mb-4">
+                        <h2 class="display-4 @(Model.Score >= 50 ? "text-success" : "text-danger")">
+                            %@Model.Score.ToString("F1")
+                        </h2>
+                        <p class="text-muted">
+                            Toplam @Model.TotalQuestions Soru
+                        </p>
+                        <p class="text-muted">
+                            Tamamlanma: @Model.CompletedAt.ToString("dd/MM/yyyy HH:mm")
+                        </p>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="stats-container">
+                        <div class="progress mb-3" style="height: 25px;">
+                            <div class="progress-bar bg-success" 
+                                 role="progressbar" 
+                                 style="width: @Model.Score%">
+                                @Model.Score.ToString("F1")%
+                            </div>
+                        </div>
+                        <p class="text-center">
+                            <span class="badge bg-success">
+                                @Model.Answers.Count(a => a.IsCorrect) Doğru
+                            </span>
+                            <span class="badge bg-danger ms-2">
+                                @Model.Answers.Count(a => !a.IsCorrect) Yanlış
+                            </span>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="answers-section">
+        <h4 class="mb-3">Soru Detayları</h4>
+        @foreach (var answer in Model.Answers)
+        {
+            <div class="card mb-3 @(answer.IsCorrect ? "border-success" : "border-danger")">
+                <div class="card-header @(answer.IsCorrect ? "bg-success" : "bg-danger") text-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span>Soru</span>
+                        @if (answer.IsCorrect)
+                        {
+                            <span class="badge bg-white text-success">Doğru</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-white text-danger">Yanlış</span>
+                        }
+                    </div>
+                </div>
+                <div class="card-body">
+                    <h5 class="card-title mb-3">@answer.QuestionText</h5>
+                    
+                    <p class="mb-2">
+                        <strong>Sizin Cevabınız:</strong>
+                        <span class="@(answer.IsCorrect ? "text-success" : "text-danger")">
+                            @answer.SelectedOptionText
+                        </span>
+                    </p>
+                    
+                    @if (!answer.IsCorrect)
+                    {
+                        <p class="mb-0">
+                            <strong>Doğru Cevap:</strong>
+                            <span class="text-success">@answer.CorrectOptionText</span>
+                        </p>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+
+    <div class="text-center mt-4">
+        <a href="@Url.Action("Index", "Home")" class="btn btn-primary">
+            Ana Sayfaya Dön
+        </a>
+    </div>
+</div>
+
+<style>
+    .score-container {
+        padding: 2rem;
+        border-radius: 10px;
+        background-color: #f8f9fa;
+    }
+
+    .stats-container {
+        padding: 2rem;
+    }
+
+    .progress {
+        border-radius: 15px;
+    }
+
+    .progress-bar {
+        transition: width 1.5s ease-in-out;
+    }
+
+    .badge {
+        font-size: 1rem;
+        padding: 0.5rem 1rem;
+    }
+
+    .card {
+        transition: transform 0.2s;
+    }
+
+    .card:hover {
+        transform: translateY(-5px);
+    }
+</style> 

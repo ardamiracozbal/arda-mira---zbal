@@ -1,0 +1,166 @@
+@{
+    ViewData["Title"] = "Index";
+    Layout = "~/Views/Shared/_adminLayout.cshtml";
+}
+
+<div class="container-fluid">
+    <h2>Kullanıcı Yönetimi</h2>
+    <div class="table-responsive">
+        <table id="userTable" class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>Ad</th>
+                    <th>Soyad</th>
+                    <th>Email</th>
+                    <th>TC No</th>
+                    <th>Sınıf</th>
+                    <th>Onay Durumu</th>
+                    <th>Rol</th>
+                    <th>İşlemler</th>
+                </tr>
+            </thead>
+            <tbody>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Düzenleme Modal -->
+<div class="modal fade" id="editUserModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Kullanıcı Düzenle</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editUserForm">
+                    <input type="hidden" id="editUserId">
+                    <div class="mb-3">
+                        <label class="form-label">Ad</label>
+                        <input type="text" class="form-control" id="editFirstName" readonly>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Soyad</label>
+                        <input type="text" class="form-control" id="editLastName" readonly>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Sınıf</label>
+                        <select class="form-select" id="editClassroom">
+                            <!-- Sınıflar AJAX ile doldurulacak -->
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Rol</label>
+                        <select class="form-select" id="editRole">
+                            <option value="Ogrenci">Öğrenci</option>
+                            <option value="Admin">Admin</option>
+                            <option value="Teacher">Öğretmen</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="editIsApproved">
+                            <label class="form-check-label">Onaylı Kullanıcı</label>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Kapat</button>
+                <button type="button" class="btn btn-primary" onclick="saveUserChanges()">Kaydet</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            loadUsers();
+            loadClassrooms();
+        });
+
+        function loadClassrooms() {
+            $.ajax({
+                url: '/User/GetClassrooms',
+                type: 'GET',
+                success: function (classrooms) {
+                    var select = $('#editClassroom');
+                    select.empty();
+                    classrooms.forEach(function(classroom) {
+                        select.append(`<option value="${classroom.id}">${classroom.name}</option>`);
+                    });
+                }
+            });
+        }
+
+        function loadUsers() {
+            $.ajax({
+                url: '/User/GetAllUsers',
+                type: 'GET',
+                success: function (users) {
+                    var tbody = $('#userTable tbody');
+                    tbody.empty();
+                    
+                    users.forEach(function(user) {
+                        var row = `<tr>
+                            <td>${user.firstName}</td>
+                            <td>${user.lastName}</td>
+                            <td>${user.email}</td>
+                            <td>${user.tcNo}</td>
+                            <td>${user.classroomName || 'Atanmamış'}</td>
+                            <td>${user.isApproved ? 'Onaylı' : 'Onaysız'}</td>
+                            <td>${user.roles.join(', ')}</td>
+                            <td>
+                                <button class="btn btn-primary btn-sm" onclick="editUser('${user.id}')">Düzenle</button>
+                            </td>
+                        </tr>`;
+                        tbody.append(row);
+                    });
+                }
+            });
+        }
+
+        function editUser(userId) {
+            $.ajax({
+                url: `/User/GetUserDetails/${userId}`,
+                type: 'GET',
+                success: function(user) {
+                    $('#editUserId').val(user.id);
+                    $('#editFirstName').val(user.firstName);
+                    $('#editLastName').val(user.lastName);
+                    $('#editClassroom').val(user.classroomId);
+                    $('#editRole').val(user.roles[0]);
+                    $('#editIsApproved').prop('checked', user.isApproved);
+                    
+                    $('#editUserModal').modal('show');
+                }
+            });
+        }
+
+        function saveUserChanges() {
+            var userData = {
+                userId: $('#editUserId').val(),
+                classroomId: $('#editClassroom').val(),
+                role: $('#editRole').val(),
+                isApproved: $('#editIsApproved').is(':checked')
+            };
+
+            $.ajax({
+                url: '/User/UpdateUser',
+                type: 'POST',
+                data: userData,
+                success: function(response) {
+                    if(response.success) {
+                        toastr.success('Kullanıcı başarıyla güncellendi');
+                        $('#editUserModal').modal('hide');
+                        loadUsers();
+                    } else {
+                        toastr.error('Güncelleme sırasında bir hata oluştu');
+                    }
+                }
+            });
+        }
+    </script>
+} 

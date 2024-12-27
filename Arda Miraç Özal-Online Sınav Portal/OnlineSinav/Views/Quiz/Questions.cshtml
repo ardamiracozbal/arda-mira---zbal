@@ -1,0 +1,171 @@
+@model Quiz
+@{
+    ViewData["Title"] = "Sınav Soruları";
+    Layout = "~/Views/Shared/_adminLayout.cshtml";
+}
+
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>@Model.Title - Sorular</h2>
+        <button class="btn btn-primary" onclick="openCreateQuestionModal()">Yeni Soru Ekle</button>
+    </div>
+
+    <div id="questionsList">
+        @{
+            int sayi = 1;
+        }
+        @foreach (var question in Model.Questions)
+        {
+          
+            
+            <div class="card mb-3">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Soru #@sayi</h5>
+                    <button class="btn btn-danger btn-sm" onclick="deleteQuestion(@question.Id)">Sil</button>
+                </div>
+                <div class="card-body">
+                    <p>@question.Text</p>
+                    <div class="options-list">
+                        @foreach (var option in question.Options)
+                        {
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" disabled @(option.IsCorrect ? "checked" : "")>
+                                <label class="form-check-label @(option.IsCorrect ? "text-success fw-bold" : "")">
+                                    @option.Text
+                                </label>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+            sayi++;
+        }
+    </div>
+</div>
+
+<!-- Soru Ekleme Modal -->
+<div class="modal fade" id="createQuestionModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Yeni Soru Ekle</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="createQuestionForm">
+                    <input type="hidden" id="quizId" value="@Model.Id">
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Soru Metni</label>
+                        <textarea class="form-control" id="questionText" rows="3" required></textarea>
+                    </div>
+
+                    <div class="options-container">
+                        <h6>Şıklar</h6>
+                        <div class="mb-3">
+                            <div class="option-group">
+                                <div class="input-group mb-2">
+                                    <div class="input-group-text">
+                                        <input type="radio" name="correctOption" value="0" required>
+                                    </div>
+                                    <input type="text" class="form-control option-text" placeholder="Şık 1" required>
+                                </div>
+                            </div>
+                            <div class="option-group">
+                                <div class="input-group mb-2">
+                                    <div class="input-group-text">
+                                        <input type="radio" name="correctOption" value="1">
+                                    </div>
+                                    <input type="text" class="form-control option-text" placeholder="Şık 2" required>
+                                </div>
+                            </div>
+                            <div class="option-group">
+                                <div class="input-group mb-2">
+                                    <div class="input-group-text">
+                                        <input type="radio" name="correctOption" value="2">
+                                    </div>
+                                    <input type="text" class="form-control option-text" placeholder="Şık 3" required>
+                                </div>
+                            </div>
+                            <div class="option-group">
+                                <div class="input-group mb-2">
+                                    <div class="input-group-text">
+                                        <input type="radio" name="correctOption" value="3">
+                                    </div>
+                                    <input type="text" class="form-control option-text" placeholder="Şık 4" required>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+                <button type="button" class="btn btn-primary" onclick="createQuestion()">Kaydet</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function openCreateQuestionModal() {
+            $('#createQuestionForm')[0].reset();
+            $('#createQuestionModal').modal('show');
+        }
+
+        function createQuestion() {
+            var options = [];
+            var correctOptionIndex = $('input[name="correctOption"]:checked').val();
+
+            $('.option-text').each(function(index) {
+                options.push({
+                    text: $(this).val(),
+                    isCorrect: index == correctOptionIndex
+                });
+            });
+
+            var questionData = {
+                quizId: $('#quizId').val(),
+                text: $('#questionText').val(),
+                options: options
+            };
+
+            $.ajax({
+                url: '/Quiz/CreateQuestion',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(questionData),
+                success: function(response) {
+                    if (response.success) {
+                        toastr.success('Soru başarıyla eklendi');
+                        $('#createQuestionModal').modal('hide');
+                        window.location.reload();
+                    } else {
+                        toastr.error('Soru eklenirken bir hata oluştu');
+                    }
+                },
+                error: function() {
+                    toastr.error('Bir hata oluştu');
+                }
+            });
+        }
+
+        function deleteQuestion(questionId) {
+            if (confirm('Bu soruyu silmek istediğinizden emin misiniz?')) {
+                $.ajax({
+                    url: '/Quiz/DeleteQuestion/' + questionId,
+                    type: 'POST',
+                    success: function(response) {
+                        if (response.success) {
+                            toastr.success('Soru başarıyla silindi');
+                            window.location.reload();
+                        } else {
+                            toastr.error('Soru silinirken bir hata oluştu');
+                        }
+                    }
+                });
+            }
+        }
+    </script>
+} 
